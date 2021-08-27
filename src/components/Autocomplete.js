@@ -1,37 +1,59 @@
-import {useState, useEffect, useRef} from 'react'
-import {loadGooglePlaces, handleScriptLoad} from '../utils/googlePlacesScript';
+import { useState, useRef } from 'react';
+import debounce from '../utils/debounce';
+import MovieCard from './MovieCard';
 
 export default function Autocomplete() {
+	const [value, setValue] = useState('');
+	const [items, setItems] = useState([]);
 
-    // const [items, setItems] = useState([]);
-    const [query, setQuery] = useState('');
+	// actual fetching function
+	const fetchMovies = async (q) => {
+		const response = await fetch(`https://www.omdbapi.com/?s=${q}&apikey=${process.env.REACT_APP_OMDB_API_KEY}`);
+		const data = await response.json();
+		if (data.Response !== 'False') {
+			setItems(data.Search.slice(0, 5));
+		} else {
+			setItems([{ Title: data.Error }]);
+		}
+	};
 
-    const inputRef = useRef();
+	// will be created only once initially
+	const debouncedFetch = useRef(
+		debounce((query) => fetchMovies(query), 300),
+		[]
+	).current;
 
-    useEffect(() => {
-        loadGooglePlaces(() => handleScriptLoad(setQuery, inputRef));
-    }, [])
+	// onclick handler function
+	const handleChange = (event) => {
+		const { value: newValue } = event.target;
+		setValue(newValue);
+		if (newValue.length > 3) {
+			debouncedFetch(newValue);
+		}
 
-    // const data = [
-    //     {'text': 'Abhijeet Mahavarkar'},
-    //     {'text': 'Test Again'},
-    //     {'text': 'lorem ipsum'},
-    //     {'text': 'little good'},
-    //     {'text': 'youtube good'},
-    //     {'text': 'ui god'}
-    // ];
+		if (newValue.length < 4) {
+			setItems([]);
+		}
+	};
 
-    // function search(e) {
-    //     console.log(e.target.value);
-    //     setItems(data.filter(item => item.text.includes(e.target.value)));
-    //     console.log(items);
-    // }
-    return (
-        <div className="autocomplete">
-            <input type="search" name="search" placeholder="Search for Google Place" onChange={event => setQuery(event.target.value)} ref={inputRef}  value={query} />
-            <ul className="result-list shadow-lg" id="result-list">
-                {/* {items.map((item, index) => <li key={index} className="result-item">{item.text}</li>)} */}
-            </ul>
-        </div>
-        )
-    }
+	return (
+		<div className="autocomplete">
+			<label htmlFor="search">Search for Movies</label>
+			<input
+				type="search"
+				name="search"
+				placeholder="type a movie name to get information"
+				onChange={handleChange}
+				value={value}
+				autocomplete="off"
+			/>
+			{items.length > 0 && (
+				<ul className="result-list shadow-lg" id="result-list">
+					{items.map((item, index) => (
+						<MovieCard key={index} movie={item} />
+					))}
+				</ul>
+			)}
+		</div>
+	);
+}
