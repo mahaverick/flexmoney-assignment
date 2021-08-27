@@ -9,7 +9,7 @@ export default function MovieFull() {
 	useEffect(() => {
 		const fetchMovie = async () => {
 			const response = await fetch(
-				`http://www.omdbapi.com/?i=${imdbId}&plot=full&apikey=${process.env.REACT_APP_OMDB_API_KEY}`
+				`https://www.omdbapi.com/?i=${imdbId}&plot=full&apikey=${process.env.REACT_APP_OMDB_API_KEY}`
 			);
 			const data = await response.json();
 
